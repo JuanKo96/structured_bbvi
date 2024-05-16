@@ -14,7 +14,7 @@ from attrdict import AttrDict
 def parse_args_and_config():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", type=str, required=True, help="Path to the configuration file"
+        "--config", type=str, help="Path to the configuration file", default="config.yaml"
     )
     args, remaining_args = parser.parse_known_args()
 
@@ -58,9 +58,9 @@ def main(config):
             d_total = config.d_z + config.N * config.d_y
 
             if config.model_type == "DiagonalVariational":
-                q = DiagonalVariational(d_total, config.n_sample).to(device)
+                q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(device)
             elif config.model_type == "FullRankVariational":
-                q = FullRankVariational(d_total, config.n_sample).to(device)
+                q = FullRankVariational(d_total, config.n_sample, config.jitter).to(device)
             elif config.model_type == "StructuredVariational":
                 q = StructuredVariational(
                     config.d_z, config.d_y, config.N, config.n_sample, config.jitter
