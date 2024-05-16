@@ -5,8 +5,8 @@ import torch.nn as nn
 class DiagonalVariational(nn.Module):
     def __init__(self, d, n_sample, jitter):
         super(DiagonalVariational, self).__init__()
-        self.m = nn.Parameter(torch.randn(d))
-        self.log_diag_L = nn.Parameter(torch.randn(d))
+        self.m = nn.Parameter(torch.randn(d).double())
+        self.log_diag_L = nn.Parameter(torch.randn(d).double())
         self.n_sample = n_sample
         self.jitter = float(jitter)
 
@@ -69,7 +69,7 @@ class StructuredVariational(nn.Module):
         d_total = self.d_z + self.N * self.d_y
         L_dense = torch.zeros((d_total, d_total), device=self.m.device).double()
         Lz = self.Lz.tril()
-        Ly = nn.ParameterList([ly.tril() for ly in self.Ly])
+        Ly = [ly.tril() for ly in self.Ly]
         L_dense[: self.d_z, : self.d_z] = Lz
         for n in range(self.N):
             start = self.d_z + n * self.d_y

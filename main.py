@@ -71,7 +71,7 @@ def main(config):
             optimizer = optim.SGD(q.parameters(), lr=step_size)
 
             run = wandb.init(
-                project=f"{config.wandb_project}-seed{seed}-stepsize{step_size}",
+                project=f"{config.wandb_project}",
                 config=config,
                 mode=wandb_mode,
                 reinit=True,

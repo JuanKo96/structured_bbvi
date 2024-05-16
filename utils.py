@@ -15,8 +15,8 @@ def set_seed(seed):
 
 
 def compute_negative_energy(samples):
-    mu = torch.zeros(samples.size(1), device=samples.device)
-    Sigma = torch.eye(samples.size(1), device=samples.device)
+    mu = torch.zeros(samples.size(1), device=samples.device).double()
+    Sigma = torch.eye(samples.size(1), device=samples.device).double()
     return -torch.mean(
         torch.distributions.MultivariateNormal(mu, Sigma).log_prob(samples)
     )
