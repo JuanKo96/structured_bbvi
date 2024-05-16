@@ -38,7 +38,7 @@ def parse_args_and_config():
 def main(config):
     wandb_mode = config.get("wandb_mode", "online")
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device:", device)
 
     if isinstance(config.step_sizes, list):

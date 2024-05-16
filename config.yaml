@@ -7,7 +7,7 @@ n_iterations: 2
 gamma: 0.1
 lr: 0.001
 jitter: 1e-6
-model_type: DiagonalVariational
+model_type: StructuredVariational # DiagonalVariational, FullRankVariational, StructuredVariational
 step_sizes:
   start: -4
   stop: -3
