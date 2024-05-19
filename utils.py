@@ -14,9 +14,7 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 
-def compute_negative_energy(samples):
-    mu = torch.zeros(samples.size(1), device=samples.device).double()
-    Sigma = torch.eye(samples.size(1), device=samples.device).double()
+def compute_negative_energy(samples,mu, Sigma):
     return -torch.mean(
         torch.distributions.MultivariateNormal(mu, Sigma).log_prob(samples)
     )

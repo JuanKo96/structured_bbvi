@@ -6,12 +6,13 @@ class DiagonalVariational(nn.Module):
     def __init__(self, d, n_sample, jitter):
         super(DiagonalVariational, self).__init__()
         self.m = nn.Parameter(torch.randn(d).double())
-        self.log_diag_L = nn.Parameter(torch.randn(d).double())
+        # self.m = nn.Parameter(torch.zeros(d).double())
+        self.diag_L = nn.Parameter(torch.randn(d).double())
         self.n_sample = n_sample
         self.jitter = float(jitter)
 
     def forward(self):
-        diag_L = self.log_diag_L
+        diag_L = self.diag_L
         L = torch.diag(diag_L)
         cov = L @ L.T + torch.eye(L.size(0), device=L.device) * self.jitter
         return torch.distributions.MultivariateNormal(self.m, cov).rsample(
@@ -23,7 +24,9 @@ class FullRankVariational(nn.Module):
     def __init__(self, d, n_sample, jitter):
         super(FullRankVariational, self).__init__()
         self.m = nn.Parameter(torch.randn(d).double())
+        # self.m = nn.Parameter(torch.zeros(d).double())
         self.L = nn.Parameter(self.init_tril_with_positive_diag(d, d))
+        # self.L = nn.Parameter(torch.eye(d).double())
         self.n_sample = n_sample
         self.jitter = float(jitter)
         
@@ -50,14 +53,17 @@ class StructuredVariational(nn.Module):
         self.jitter = float(jitter)
         self.m = nn.Parameter(torch.randn(d_z + N * d_y).double())
         self.Lz = nn.Parameter(self.init_tril_with_positive_diag(d_z, d_z))
+        # self.Lz = nn.Parameter(torch.eye(d_z).double())
         self.Ly = nn.ParameterList(
             [
                 nn.Parameter(self.init_tril_with_positive_diag(d_y, d_y))
+                # nn.Parameter(torch.eye(d_y).double())
                 for _ in range(N)
             ]
         )
         self.Lyz = nn.ParameterList(
             [nn.Parameter(torch.randn(d_y, d_z).double()) for _ in range(N)]
+            # [nn.Parameter(torch.zeros(d_y, d_z).double()) for _ in range(N)]
         )
 
     def init_tril_with_positive_diag(self, rows, cols):

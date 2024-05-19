@@ -52,38 +52,56 @@ def main(config):
     else:
         raise ValueError("Invalid format for step_sizes")
 
+    d_total = config.d_z + config.N * config.d_y
+    
+    set_seed(1234)
+    # Set random mu and Sigma
+    mu = torch.randn(d_total, device=device).double()
+    # mu = torch.zeros(d_total, device=device).double()
+    L_Sigma = torch.tril(torch.randn(d_total, d_total, device=device).double())
+    L_Sigma.diagonal().uniform_(0.1, 1.0)  # Ensure positive diagonal elements
+    Sigma = L_Sigma @ L_Sigma.T + torch.eye(d_total, device=device).double() * 1e-1
+    # Sigma = torch.eye(d_total, device=device).double()
+    
+    # data = torch.randn(config.n_sample, d_total, device=device).double()
+    # mu = torch.mean(data, dim=0).double()
+    # cov = torch.cov(data.T)
+    # # Add jitter for positive definiteness
+    # Sigma = cov + torch.eye(cov.size(0), device=cov.device) * 1e-6
+    
     for step_size in step_sizes:
-        for seed in config.seeds:
-            set_seed(seed)
-            d_total = config.d_z + config.N * config.d_y
+        # for seed in config.seeds:
+        seed = config.seed
+        set_seed(seed)
+        
 
-            if config.model_type == "DiagonalVariational":
-                q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(device)
-            elif config.model_type == "FullRankVariational":
-                q = FullRankVariational(d_total, config.n_sample, config.jitter).to(device)
-            elif config.model_type == "StructuredVariational":
-                q = StructuredVariational(
-                    config.d_z, config.d_y, config.N, config.n_sample, config.jitter
-                ).to(device)
-            else:
-                raise ValueError(f"Unknown model type: {config.model_type}")
+        if config.model_type == "DiagonalVariational":
+            q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(device)
+        elif config.model_type == "FullRankVariational":
+            q = FullRankVariational(d_total, config.n_sample, config.jitter).to(device)
+        elif config.model_type == "StructuredVariational":
+            q = StructuredVariational(
+                config.d_z, config.d_y, config.N, config.n_sample, config.jitter
+            ).to(device)
+        else:
+            raise ValueError(f"Unknown model type: {config.model_type}")
 
-            optimizer = optim.SGD(q.parameters(), lr=step_size)
+        optimizer = optim.SGD(q.parameters(), lr=step_size)
 
-            run = wandb.init(
-                project=f"{config.wandb_project}",
-                config=config,
-                mode=wandb_mode,
-                reinit=True,
-            )
-            wandb.config.update(
-                {"seed": seed, "step_size": step_size}, allow_val_change=True
-            )
+        run = wandb.init(
+            project=f"{config.wandb_project}",
+            config=config,
+            mode=wandb_mode,
+            reinit=True,
+        )
+        wandb.config.update(
+            {"seed": seed, "step_size": step_size}, allow_val_change=True
+        )
 
-            final_loss = train(q, optimizer, config, device, seed, step_size)
+        final_loss = train(q, optimizer, config, device, seed, step_size, mu, Sigma)
 
-            wandb.log({"final_loss": final_loss})
-            run.finish()
+        wandb.log({"final_loss": final_loss})
+        run.finish()
 
 
 if __name__ == "__main__":
