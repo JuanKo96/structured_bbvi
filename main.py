@@ -58,10 +58,13 @@ def main(config):
     # Set random mu and Sigma
     mu = torch.randn(d_total, device=device).double()
     # mu = torch.zeros(d_total, device=device).double()
-    L_Sigma = torch.tril(torch.randn(d_total, d_total, device=device).double())
-    L_Sigma.diagonal().uniform_(0.1, 1.0)  # Ensure positive diagonal elements
-    Sigma = L_Sigma @ L_Sigma.T + torch.eye(d_total, device=device).double() * 1e-1
-    # Sigma = torch.eye(d_total, device=device).double()
+    # L_Sigma = torch.tril(torch.randn(d_total, d_total, device=device).double())
+    # L_Sigma.diagonal().uniform_(0.1, 1.0)  # Ensure positive diagonal elements
+    # L_Sigma = L_Sigma
+    # Sigma = L_Sigma @ L_Sigma.T + torch.eye(L_Sigma.size(0), device=L_Sigma.device) * 1e-1
+    # L_Sigma = torch.linalg.cholesky(Sigma)
+    Sigma = torch.eye(d_total, device=device).double() * 1e-2
+    L_Sigma = torch.linalg.cholesky(Sigma)
     
     # data = torch.randn(config.n_sample, d_total, device=device).double()
     # mu = torch.mean(data, dim=0).double()
@@ -98,7 +101,7 @@ def main(config):
             {"seed": seed, "step_size": step_size}, allow_val_change=True
         )
 
-        final_loss = train(q, optimizer, config, device, seed, step_size, mu, Sigma)
+        final_loss = train(q, optimizer, config, device, seed, step_size, mu, Sigma, L_Sigma)
 
         wandb.log({"final_loss": final_loss})
         run.finish()

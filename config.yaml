@@ -16,6 +16,5 @@ step_sizes:
 #   - 0
 #   - 1
 #   - 2
-wandb_project: structured_bbvi2
+wandb_project: structured_bbvi3
 wandb_mode: online  # 'online' or 'offline'
-  
