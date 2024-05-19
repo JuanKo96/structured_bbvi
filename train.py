@@ -17,7 +17,7 @@ def train(q, optimizer, config, device, seed, step_size, mu, Sigma, L_Sigma):
             if config.model_type == "DiagonalVariational":
                 proximal_update(q.diag_L, config.gamma)
                 m = q.m
-                L_var = torch.diag(q.diag_L ** 2)
+                L_var = torch.diag(q.diag_L)
             elif config.model_type == "FullRankVariational":
                 for i in range(q.L.size(0)):
                     proximal_update(q.L[i, i], config.gamma)

@@ -1,20 +1,20 @@
 seed: 0
 d_z: 5
 d_y: 3
-N: 1000
+N: 100
 n_sample: 10
-n_iterations: 10000
+n_iterations: 1000
 gamma: 0.01
 lr: 0.001
 jitter: 1e-6
 model_type: StructuredVariational # DiagonalVariational, FullRankVariational, StructuredVariational
 step_sizes:
-  start: -4
+  start: -5
   stop: -3
   num: 10
 # seeds:
 #   - 0
 #   - 1
 #   - 2
-wandb_project: structured_bbvi3
+wandb_project: structured_bbvi5
 wandb_mode: online  # 'online' or 'offline'
