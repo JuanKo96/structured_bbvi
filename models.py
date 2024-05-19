@@ -8,6 +8,7 @@ class DiagonalVariational(nn.Module):
         self.m = nn.Parameter(torch.randn(d).double())
         # self.m = nn.Parameter(torch.zeros(d).double())
         self.diag_L = nn.Parameter(torch.randn(d).double())
+        # self.diag_L = nn.Parameter(torch.ones(d).double())
         self.n_sample = n_sample
         self.jitter = float(jitter)
 
@@ -52,6 +53,7 @@ class StructuredVariational(nn.Module):
         self.n_sample = n_sample
         self.jitter = float(jitter)
         self.m = nn.Parameter(torch.randn(d_z + N * d_y).double())
+        # self.m = nn.Parameter(torch.zeros(d_z + N * d_y).double())
         self.Lz = nn.Parameter(self.init_tril_with_positive_diag(d_z, d_z))
         # self.Lz = nn.Parameter(torch.eye(d_z).double())
         self.Ly = nn.ParameterList(

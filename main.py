@@ -7,7 +7,7 @@ import numpy as np
 import os
 from models import DiagonalVariational, FullRankVariational, StructuredVariational
 from train import train
-from utils import set_seed
+from utils import set_seed, get_target_posterior
 from attrdict import AttrDict
 
 
@@ -54,7 +54,9 @@ def main(config):
 
     d_total = config.d_z + config.N * config.d_y
     
-    set_seed(1234)
+    seed_for_target = 1234
+    jitter_for_target = 1e-2
+    set_seed(seed_for_target)
     # Set random mu and Sigma
     mu = torch.randn(d_total, device=device).double()
     # mu = torch.zeros(d_total, device=device).double()
@@ -63,7 +65,7 @@ def main(config):
     # L_Sigma = L_Sigma
     # Sigma = L_Sigma @ L_Sigma.T + torch.eye(L_Sigma.size(0), device=L_Sigma.device) * 1e-1
     # L_Sigma = torch.linalg.cholesky(Sigma)
-    Sigma = torch.eye(d_total, device=device).double() * 1e-2
+    Sigma = torch.eye(d_total, device=device).double() * jitter_for_target
     L_Sigma = torch.linalg.cholesky(Sigma)
     
     # data = torch.randn(config.n_sample, d_total, device=device).double()
@@ -71,6 +73,7 @@ def main(config):
     # cov = torch.cov(data.T)
     # # Add jitter for positive definiteness
     # Sigma = cov + torch.eye(cov.size(0), device=cov.device) * 1e-6
+    mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target)
     
     for step_size in step_sizes:
         # for seed in config.seeds:
