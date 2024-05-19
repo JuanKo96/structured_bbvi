@@ -47,8 +47,10 @@ def get_target_posterior(config, device, seed, jitter):
         start = d_z + n * d_y
         L_dense[start : start + d_y, : d_z] = Lyz[n]
         L_dense[start : start + d_y, start : start + d_y] = Ly[n]
+    # L_dense = L_dense + torch.eye(d_total, device=m.device) * jitter
+    L_dense = L_dense + torch.diag(torch.FloatTensor(d_total).uniform_(1, 2)).double().to(m.device)
     cov = (
-        L_dense @ L_dense.T + torch.eye(d_total, device=m.device) * jitter
+        L_dense @ L_dense.T #+ torch.eye(d_total, device=m.device) * jitter
     )
     # L = torch.linalg.cholesky(cov)
     return m, cov, L_dense
