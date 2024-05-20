@@ -49,16 +49,16 @@ class StructuredVariational(nn.Module):
         self.jitter = float(jitter)
         self.m = nn.Parameter(torch.zeros(d_z + N * d_y).double())
         self.Lz = nn.Parameter(torch.eye(d_z).double())
-        self.Ly = nn.Parameter(torch.eye(N * d_y).double())
+        self.Ly_blocks = nn.Parameter(torch.eye(d_y).repeat(N, 1, 1).double())
         self.Lyz = nn.Parameter(torch.zeros(N * d_y, d_z).double())
 
     def forward(self):
         d_total = self.d_z + self.N * self.d_y
 
-        # Construct L_dense efficiently
         L_dense = torch.zeros((d_total, d_total), device=self.m.device).double()
         Lz = self.Lz.tril()
-        Ly = self.Ly.tril()
+        Ly_blocks = self.Ly_blocks.tril()
+        Ly = torch.block_diag(*Ly_blocks)
 
         L_dense[:self.d_z, :self.d_z] = Lz
         L_dense[self.d_z:, :self.d_z] = self.Lyz

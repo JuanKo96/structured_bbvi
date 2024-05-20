@@ -22,13 +22,16 @@ def train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigm
                 m = q.m
                 L_var = torch.diag(q.diag_L)
             elif config.model_type == "FullRankVariational":
-                proximal_update(q.L.diag(), config.gamma)
+                proximal_update(torch.diagonal(q.L), config.gamma)
                 
                 m = q.m
                 L_var = torch.tril(q.L)
             elif config.model_type == "StructuredVariational":
-                proximal_update(q.Lz.diag(), config.gamma)
-                proximal_update(q.Ly.diag(), config.gamma)
+                proximal_update(torch.diagonal(q.Lz), config.gamma)
+                # proximal_update(q.Ly.diag(), config.gamma)
+                # for block in q.Ly_blocks:
+                #     proximal_update(block.diag(), config.gamma)
+                proximal_update(torch.diagonal(q.Ly_blocks, dim1=1, dim2=2), config.gamma)
 
                 m=q.m
                 d_total = q.d_z + q.N * q.d_y
@@ -36,7 +39,9 @@ def train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigm
                 # Construct L_dense efficiently
                 L_dense = torch.zeros((d_total, d_total), device=q.m.device).double()
                 Lz = q.Lz.tril()
-                Ly = q.Ly.tril()
+                # Ly = q.Ly.tril()
+                Ly_blocks = q.Ly_blocks.tril()
+                Ly = torch.block_diag(*Ly_blocks)
 
                 L_dense[:q.d_z, :q.d_z] = Lz
                 L_dense[q.d_z:, :q.d_z] = q.Lyz
