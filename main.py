@@ -55,25 +55,15 @@ def main(config):
     d_total = config.d_z + config.N * config.d_y
     
     seed_for_target = 1234
-    jitter_for_target = 1
+    jitter_for_target = 0.1
     set_seed(seed_for_target)
     # Set random mu and Sigma
     # mu = torch.randn(d_total, device=device).double()
-    # mu = torch.zeros(d_total, device=device).double()
-    # L_Sigma = torch.tril(torch.randn(d_total, d_total, device=device).double())
-    # L_Sigma.diagonal().uniform_(0.1, 1.0)  # Ensure positive diagonal elements
-    # L_Sigma = L_Sigma
-    # Sigma = L_Sigma @ L_Sigma.T + torch.eye(L_Sigma.size(0), device=L_Sigma.device) * 1e-1
-    # L_Sigma = torch.linalg.cholesky(Sigma)
     # Sigma = torch.eye(d_total, device=device).double() * jitter_for_target
     # L_Sigma = torch.linalg.cholesky(Sigma)
     
-    # data = torch.randn(config.n_sample, d_total, device=device).double()
-    # mu = torch.mean(data, dim=0).double()
-    # cov = torch.cov(data.T)
-    # # Add jitter for positive definiteness
-    # Sigma = cov + torch.eye(cov.size(0), device=cov.device) * 1e-6
     mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target)
+    target_dist = torch.distributions.MultivariateNormal(mu, Sigma)
     
     for step_size in step_sizes:
         # for seed in config.seeds:
@@ -104,9 +94,11 @@ def main(config):
             {"seed": seed, "step_size": step_size}, allow_val_change=True
         )
 
-        final_loss = train(q, optimizer, config, device, seed, step_size, mu, Sigma, L_Sigma)
+        final_loss, final_optimality_gap_C, final_optimality_gap = train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigma)
 
-        wandb.log({"final_loss": final_loss})
+        wandb.log({"final_loss": final_loss,
+                   "final_optimality_gap_C":final_optimality_gap_C,
+                   "final_optimality_gap":final_optimality_gap})
         run.finish()
 
 
