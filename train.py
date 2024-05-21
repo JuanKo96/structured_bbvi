@@ -38,14 +38,19 @@ def train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigm
 
                 # Construct L_dense efficiently
                 L_dense = torch.zeros((d_total, d_total), device=q.m.device).double()
-                Lz = q.Lz.tril()
+                Lz = torch.tril(q.Lz)
                 # Ly = q.Ly.tril()
-                Ly_blocks = q.Ly_blocks.tril()
-                Ly = torch.block_diag(*Ly_blocks)
+                Ly_blocks = torch.tril(q.Ly_blocks)
+                # Ly = torch.block_diag(*Ly_blocks)
 
                 L_dense[:q.d_z, :q.d_z] = Lz
                 L_dense[q.d_z:, :q.d_z] = q.Lyz
-                L_dense[q.d_z:, q.d_z:] = Ly
+                # L_dense[q.d_z:, q.d_z:] = Ly
+                
+                for n in range(q.N):
+                    start = q.d_z + n * q.d_y
+                    L_dense[start : start + q.d_y, start : start + q.d_y] = Ly_blocks[n]
+                    
                 L_var = L_dense
                 
         optimality_gap_m = torch.norm(m - mu)**2 

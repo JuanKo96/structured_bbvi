@@ -34,7 +34,7 @@ class FullRankVariational(nn.Module):
 
     def forward(self):
         L = torch.tril(self.L)
-        L = L + + torch.eye(L.size(0), device=L.device) * self.jitter
+        L = L + torch.eye(L.size(0), device=L.device) * self.jitter
         std_normal = torch.randn(self.n_sample, len(self.m), device=L.device).double()
         z = self.m + std_normal @ L
         return z
@@ -56,14 +56,18 @@ class StructuredVariational(nn.Module):
         d_total = self.d_z + self.N * self.d_y
 
         L_dense = torch.zeros((d_total, d_total), device=self.m.device).double()
-        Lz = self.Lz.tril()
-        Ly_blocks = self.Ly_blocks.tril()
-        Ly = torch.block_diag(*Ly_blocks)
+        Lz = torch.tril(self.Lz)
+        Ly_blocks = torch.tril(self.Ly_blocks)
+        # Ly = torch.block_diag(*Ly_blocks)
 
         L_dense[:self.d_z, :self.d_z] = Lz
         L_dense[self.d_z:, :self.d_z] = self.Lyz
-        L_dense[self.d_z:, self.d_z:] = Ly
-
+        # L_dense[self.d_z:, self.d_z:] = Ly
+        
+        for n in range(self.N):
+            start = self.d_z + n * self.d_y
+            L_dense[start : start + self.d_y, start : start + self.d_y] = Ly_blocks[n]
+        
         L_dense = L_dense + torch.eye(d_total, device=L_dense.device) * self.jitter
 
         std_normal = torch.randn(self.n_sample, d_total, device=L_dense.device).double()

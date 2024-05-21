@@ -7,7 +7,7 @@ n_iterations: 10000
 gamma: 0.0001
 lr: 0.001
 jitter: 1e-6
-model_type: StructuredVariational # DiagonalVariational, FullRankVariational, StructuredVariational
+model_type: DiagonalVariational # DiagonalVariational, FullRankVariational, StructuredVariational
 step_sizes:
   start: -4
   stop: -3
@@ -18,3 +18,4 @@ step_sizes:
 #   - 2
 wandb_project: structured_bbvi_target
 wandb_mode: online  # 'online' or 'offline'
+forloop: 1
