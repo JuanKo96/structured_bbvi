@@ -24,24 +24,26 @@ def proximal_update(param, gamma):
     delta_L = 0.5 * (torch.sqrt(param.data**2 + 4 * gamma) - param.data)
     param.data += delta_L
 
-def get_target_posterior(config, device, seed, jitter):
+def get_target_posterior(config, device, seed, jitter, scaled):
     set_seed(seed)
     d_z = config.d_z
     d_y = config.d_y
     N = config.N
     jitter = float(jitter)
+    d_z = config.d_z
+
     m = torch.randn(d_z + N * d_y, device=device).double()
-    Lz = init_tril_with_positive_diag(d_z, d_z, device=device)
+    Lz = torch.eye(d_z, device=device) * scaled 
     Ly = [
-            init_tril_with_positive_diag(d_y, d_y, device=device)
+            torch.eye(d_y, device=device) * scaled
             for _ in range(N)
         ]
-    Lyz = [torch.randn(d_y, d_z, device=device).double() for _ in range(N)]
-    
+    Lyz = [torch.randn(d_y, d_z, device=device).double()*0.001  for _ in range(N)]
+
     d_total = d_z + N * d_y
     L_dense = torch.zeros((d_total, d_total), device=m.device).double()
-    Lz = Lz.tril()
-    Ly = [ly.tril() for ly in Ly]
+    Lz = torch.tril(Lz)
+    Ly = [torch.tril(ly) for ly in Ly]
     L_dense[: d_z, : d_z] = Lz
     for n in range(N):
         start = d_z + n * d_y
@@ -50,9 +52,8 @@ def get_target_posterior(config, device, seed, jitter):
     L_dense = L_dense #+ torch.eye(d_total, device=m.device) #* jitter
     # L_dense = L_dense + torch.diag(torch.FloatTensor(d_total).uniform_(1, 2)).double().to(m.device)
     cov = (
-        L_dense @ L_dense.T + torch.eye(d_total, device=m.device) * jitter
+        L_dense @ L_dense.T  #+ torch.eye(d_total, device=m.device) * jitter
     )
-    # L = torch.linalg.cholesky(cov)
     return m, cov, L_dense
 
 def init_tril_with_positive_diag(rows, cols, device):

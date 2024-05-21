@@ -55,20 +55,18 @@ def main(config):
     d_total = config.d_z + config.N * config.d_y
     
     seed_for_target = 10
-    jitter_for_target = 0.1
+    jitter_for_target = 1e-5
+    scaled = 0.9
     set_seed(seed_for_target)
     # Set random mu and Sigma
     # mu = torch.randn(d_total, device=device).double()
     # Sigma = torch.eye(d_total, device=device).double() * jitter_for_target
     # L_Sigma = torch.linalg.cholesky(Sigma)
     
-    mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target)
+    mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target, scaled=scaled)
 
-    # target_posterior = TargetPosterior(config.d_z, config.d_y, config.N, jitter_for_target)
-    # mu, Sigma, L_Sigma = target_posterior()
-    
     target_dist = torch.distributions.MultivariateNormal(mu, Sigma)
-    
+    final_optimality_gap_list = []
     for step_size in step_sizes:
         # for seed in config.seeds:
         seed = config.seed

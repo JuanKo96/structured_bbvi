@@ -11,7 +11,7 @@ def train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigm
         samples = q()
         loss = compute_negative_energy(target_dist, samples)
         # Sometimes, the loss gets negative values
-        loss = torch.clamp(loss, min=0, max=1e6)
+        # loss = torch.clamp(loss, min=0, max=1e6)
         loss.backward()
         optimizer.step()
 

@@ -73,7 +73,7 @@ class StructuredVariational(nn.Module):
         std_normal = torch.randn(self.n_sample, d_total, device=L_dense.device).double()
         z = self.m + std_normal @ L_dense.T
         return z
-    
+
 # class StructuredVariational(nn.Module):
 #     def __init__(self, d_z, d_y, N, n_sample, jitter):
 #         super(StructuredVariational, self).__init__()
