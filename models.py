@@ -51,7 +51,7 @@ class StructuredVariational(nn.Module):
         self.m = nn.Parameter(torch.zeros(d_z + N * d_y).double())
         Lz = torch.eye(d_z).double()
         Ly_blocks = torch.eye(d_y).repeat(N, 1, 1).double()
-        Lyz = torch.randn(N * d_y, d_z).double()
+        Lyz = torch.zeros(N * d_y, d_z).double()
 
         d_total = self.d_z + self.N * self.d_y
         indices = []

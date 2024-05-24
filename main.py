@@ -69,46 +69,45 @@ def main(config):
     target_dist = torch.distributions.MultivariateNormal(mu, Sigma)
     final_optimality_gap_list = []
     for step_size in step_sizes:
-        # try:
-        # for seed in config.seeds:
-        seed = config.seed
-        set_seed(seed)
-        
+        try:
+            seed = config.seed
+            set_seed(seed)
+            
 
-        if config.model_type == "DiagonalVariational":
-            q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(device)
-        elif config.model_type == "FullRankVariational":
-            q = FullRankVariational(d_total, config.n_sample, config.jitter).to(device)
-        elif config.model_type == "StructuredVariational":
-            q = StructuredVariational(
-                config.d_z, config.d_y, config.N, config.n_sample, config.jitter
-            ).to(device)
-        else:
-            raise ValueError(f"Unknown model type: {config.model_type}")
+            if config.model_type == "DiagonalVariational":
+                q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(device)
+            elif config.model_type == "FullRankVariational":
+                q = FullRankVariational(d_total, config.n_sample, config.jitter).to(device)
+            elif config.model_type == "StructuredVariational":
+                q = StructuredVariational(
+                    config.d_z, config.d_y, config.N, config.n_sample, config.jitter
+                ).to(device)
+            else:
+                raise ValueError(f"Unknown model type: {config.model_type}")
 
-        optimizer = optim.SGD(q.parameters(), lr=step_size)
+            optimizer = optim.SGD(q.parameters(), lr=step_size)
 
-        run = wandb.init(
-            project=f"{config.wandb_project}",
-            config=config,
-            mode=wandb_mode,
-            reinit=True,
-        )
-        wandb.config.update(
-            {"seed": seed, "step_size": step_size}, allow_val_change=True
-        )
+            run = wandb.init(
+                project=f"{config.wandb_project}",
+                config=config,
+                mode=wandb_mode,
+                reinit=True,
+            )
+            wandb.config.update(
+                {"seed": seed, "step_size": step_size}, allow_val_change=True
+            )
 
-        final_loss, final_optimality_gap_C, final_optimality_gap = train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigma)
+            final_loss, final_optimality_gap_C, final_optimality_gap = train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigma)
 
-        wandb.log({"final_loss": final_loss,
-                "final_optimality_gap_C":final_optimality_gap_C,
-                "final_optimality_gap":final_optimality_gap})
-        run.finish()
-        # except Exception as e:
-        #     print(f"An error occurred for step size {step_size}: {e}")
-        #     wandb.log({"error": str(e), "step_size": step_size})
-        #     if 'run' in locals():
-        #         run.finish()
+            wandb.log({"final_loss": final_loss,
+                    "final_optimality_gap_C":final_optimality_gap_C,
+                    "final_optimality_gap":final_optimality_gap})
+            run.finish()
+        except Exception as e:
+            print(f"An error occurred for step size {step_size}: {e}")
+            wandb.log({"error": str(e), "step_size": step_size})
+            if 'run' in locals():
+                run.finish()
 
 if __name__ == "__main__":
     config = parse_args_and_config()

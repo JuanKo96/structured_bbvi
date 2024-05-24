@@ -13,8 +13,8 @@ pid_file="pids.txt"
 # Outer loop for 8 sets of seeds
 for outer in $(seq 0 0); do
     # Inner loop for 4 seeds in each set
-    for inner in $(seq 0 3); do
-        seed=$((outer * 4 + inner))
+    for inner in $(seq 0 2); do
+        seed=$((outer * 3 + inner))
         
         CUDA_VISIBLE_DEVICES=1 python main.py --config $config_file --seed $seed --model_type "DiagonalVariational" &
         echo $! >> $pid_file

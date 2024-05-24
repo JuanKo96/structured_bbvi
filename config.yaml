@@ -9,13 +9,13 @@ lr: 0.001
 jitter: 0
 model_type: StructuredVariational # DiagonalVariational, FullRankVariational, StructuredVariational
 step_sizes:
-  start: -4
-  stop: -3
-  num: 10
+  start: -6
+  stop: -1
+  num: 20
 # seeds:
 #   - 0
 #   - 1
 #   - 2
-wandb_project: icml_bbvi_1
+wandb_project: icml_bbvi_2
 wandb_mode: online  # 'online' or 'offline'
 forloop: 1
