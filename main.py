@@ -39,6 +39,7 @@ def main(config):
     wandb_mode = config.get("wandb_mode", "online")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device ="cpu"
     print("device:", device)
 
     if isinstance(config.step_sizes, list):
@@ -59,15 +60,16 @@ def main(config):
     scaled = 0.9
     set_seed(seed_for_target)
     # Set random mu and Sigma
-    # mu = torch.randn(d_total, device=device).double()
-    # Sigma = torch.eye(d_total, device=device).double() * jitter_for_target
-    # L_Sigma = torch.linalg.cholesky(Sigma)
+    mu = torch.randn(d_total, device=device).double()
+    Sigma = torch.eye(d_total, device=device).double() * 0.1
+    L_Sigma = torch.linalg.cholesky(Sigma)
     
-    mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target, scaled=scaled)
+    # mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target, scaled=scaled)
 
     target_dist = torch.distributions.MultivariateNormal(mu, Sigma)
     final_optimality_gap_list = []
     for step_size in step_sizes:
+        # try:
         # for seed in config.seeds:
         seed = config.seed
         set_seed(seed)
@@ -99,10 +101,14 @@ def main(config):
         final_loss, final_optimality_gap_C, final_optimality_gap = train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigma)
 
         wandb.log({"final_loss": final_loss,
-                   "final_optimality_gap_C":final_optimality_gap_C,
-                   "final_optimality_gap":final_optimality_gap})
+                "final_optimality_gap_C":final_optimality_gap_C,
+                "final_optimality_gap":final_optimality_gap})
         run.finish()
-
+        # except Exception as e:
+        #     print(f"An error occurred for step size {step_size}: {e}")
+        #     wandb.log({"error": str(e), "step_size": step_size})
+        #     if 'run' in locals():
+        #         run.finish()
 
 if __name__ == "__main__":
     config = parse_args_and_config()

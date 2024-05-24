@@ -27,31 +27,9 @@ def train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigm
                 m = q.m
                 L_var = torch.tril(q.L)
             elif config.model_type == "StructuredVariational":
-                proximal_update(torch.diagonal(q.Lz), config.gamma)
-                # proximal_update(q.Ly.diag(), config.gamma)
-                # for block in q.Ly_blocks:
-                #     proximal_update(block.diag(), config.gamma)
-                proximal_update(torch.diagonal(q.Ly_blocks, dim1=1, dim2=2), config.gamma)
-
-                m=q.m
-                d_total = q.d_z + q.N * q.d_y
-
-                # Construct L_dense efficiently
-                L_dense = torch.zeros((d_total, d_total), device=q.m.device).double()
-                Lz = torch.tril(q.Lz)
-                # Ly = q.Ly.tril()
-                Ly_blocks = torch.tril(q.Ly_blocks)
-                # Ly = torch.block_diag(*Ly_blocks)
-
-                L_dense[:q.d_z, :q.d_z] = Lz
-                L_dense[q.d_z:, :q.d_z] = q.Lyz
-                # L_dense[q.d_z:, q.d_z:] = Ly
-                
-                for n in range(q.N):
-                    start = q.d_z + n * q.d_y
-                    L_dense[start : start + q.d_y, start : start + q.d_y] = Ly_blocks[n]
-                    
-                L_var = L_dense
+                q.proximal_update_step(config.gamma)
+                m =q.m
+                L_var = q.construct_matrix()
                 
         optimality_gap_m = torch.norm(m - mu)**2 
         optimality_gap_C = torch.norm(L_var - L_Sigma, p='fro')**2

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from utils import proximal_update
 
 
 class DiagonalVariational(nn.Module):
@@ -48,78 +49,76 @@ class StructuredVariational(nn.Module):
         self.n_sample = n_sample
         self.jitter = float(jitter)
         self.m = nn.Parameter(torch.zeros(d_z + N * d_y).double())
-        self.Lz = nn.Parameter(torch.eye(d_z).double())
-        self.Ly_blocks = nn.Parameter(torch.eye(d_y).repeat(N, 1, 1).double())
-        self.Lyz = nn.Parameter(torch.zeros(N * d_y, d_z).double())
+        Lz = torch.eye(d_z).double()
+        Ly_blocks = torch.eye(d_y).repeat(N, 1, 1).double()
+        Lyz = torch.randn(N * d_y, d_z).double()
 
-    def forward(self):
         d_total = self.d_z + self.N * self.d_y
-
-        L_dense = torch.zeros((d_total, d_total), device=self.m.device).double()
-        Lz = torch.tril(self.Lz)
-        Ly_blocks = torch.tril(self.Ly_blocks)
-        # Ly = torch.block_diag(*Ly_blocks)
-
-        L_dense[:self.d_z, :self.d_z] = Lz
-        L_dense[self.d_z:, :self.d_z] = self.Lyz
-        # L_dense[self.d_z:, self.d_z:] = Ly
+        indices = []
         
+        # Lz indices
+        for i in range(self.d_z):
+            for j in range(i + 1):
+                indices.append([i, j])
+        
+        # Ly indices
         for n in range(self.N):
-            start = self.d_z + n * self.d_y
-            L_dense[start : start + self.d_y, start : start + self.d_y] = Ly_blocks[n]
+            for i in range(self.d_y):
+                for j in range(i + 1):
+                    indices.append([self.d_z + n * self.d_y + i, self.d_z + n * self.d_y + j])
         
-        L_dense = L_dense + torch.eye(d_total, device=L_dense.device) * self.jitter
+        # Lyz indices
+        for n in range(self.N):
+            for i in range(self.d_y):        
+                for j in range(self.d_z):
+                    indices.append([self.d_z + n * self.d_y + i, j])
+                    
+        self.indices = torch.tensor(indices).t()
+        self.d_total = d_total
 
-        std_normal = torch.randn(self.n_sample, d_total, device=L_dense.device).double()
+        # Precompute flattened values parts
+        self.Lz_flat = nn.Parameter(torch.cat([Lz[i, :i + 1] for i in range(self.d_z)])).double()
+        self.Lyz_flat = nn.Parameter(Lyz.flatten()).double()
+        self.Ly_blocks_flat = nn.Parameter(torch.cat([
+            Ly_blocks[n].flatten()[torch.tril(torch.ones(self.d_y, self.d_y)).flatten().bool()] for n in range(self.N)
+        ])).double()
+        # Precompute diagonal indices
+        self.Lz_diag_indices = torch.cat([Lz[i, :i + 1] for i in range(self.d_z)]).bool()
+        self.Ly_blocks_diag_indices = torch.cat([
+            Ly_blocks[n].flatten()[torch.tril(torch.ones(self.d_y, self.d_y)).flatten().bool()] for n in range(self.N)
+        ]).bool()
+
+    def construct_matrix(self):
+        d_total = self.d_total
+        device = self.m.device
+        indices = self.indices.to(device)
+
+        # Construct values by concatenating precomputed parts and current parameters
+        values = torch.cat([
+            self.Lz_flat,
+            self.Ly_blocks_flat,
+            self.Lyz_flat
+        ]).to(device)
+
+        L_sparse = torch.sparse_coo_tensor(indices, values, torch.Size([d_total, d_total]), device=device)
+        L_dense = L_sparse.to_dense()
+        
+        return L_dense
+    
+    def forward(self):
+        d_total = self.d_total
+        device = self.m.device
+        L_dense = self.construct_matrix()
+
+        std_normal = torch.randn(self.n_sample, d_total, device=device).double()
         z = self.m + std_normal @ L_dense.T
         return z
-
-# class StructuredVariational(nn.Module):
-#     def __init__(self, d_z, d_y, N, n_sample, jitter):
-#         super(StructuredVariational, self).__init__()
-#         self.d_z = d_z
-#         self.d_y = d_y
-#         self.N = N
-#         self.n_sample = n_sample
-#         self.jitter = float(jitter)
-#         # self.m = nn.Parameter(torch.randn(d_z + N * d_y).double())
-#         self.m = nn.Parameter(torch.zeros(d_z + N * d_y).double())
-#         # self.Lz = nn.Parameter(self.init_tril_with_positive_diag(d_z, d_z))
-#         self.Lz = nn.Parameter(torch.eye(d_z).double())
-#         self.Ly = nn.ParameterList(
-#             [
-#                 # nn.Parameter(self.init_tril_with_positive_diag(d_y, d_y))
-#                 nn.Parameter(torch.eye(d_y).double())
-#                 for _ in range(N)
-#             ]
-#         )
-#         self.Lyz = nn.ParameterList(
-#             # [nn.Parameter(torch.randn(d_y, d_z).double()) for _ in range(N)]
-#             [nn.Parameter(torch.zeros(d_y, d_z).double()) for _ in range(N)]
-#         )
-
-#     def init_tril_with_positive_diag(self, rows, cols):
-#         tril = torch.tril(torch.randn(rows, cols).double())
-#         tril.diagonal().uniform_(0.1, 1.0).double()
-#         return tril
-
-#     def forward(self):
-#         d_total = self.d_z + self.N * self.d_y
-#         L_dense = torch.zeros((d_total, d_total), device=self.m.device).double()
-#         Lz = self.Lz.tril()
-#         Ly = [ly.tril() for ly in self.Ly]
-#         L_dense[: self.d_z, : self.d_z] = Lz
-#         for n in range(self.N):
-#             start = self.d_z + n * self.d_y
-#             L_dense[start : start + self.d_y, : self.d_z] = self.Lyz[n]
-#             L_dense[start : start + self.d_y, start : start + self.d_y] = Ly[n]
-#         L_dense = L_dense + torch.eye(d_total, device=self.m.device) * self.jitter
-#         std_normal = torch.randn(self.n_sample, len(self.m), device=L_dense.device).double()
-#         # cov = (
-#         #     L_dense @ L_dense.T + torch.eye(d_total, device=self.m.device) * self.jitter
-#         # )
-#         # return torch.distributions.MultivariateNormal(self.m, cov).rsample(
-#         #     (self.n_sample,)
-#         # )
-#         z = self.m + std_normal @ L_dense
-#         return z
+        
+    def proximal_update_step(self, gamma):
+        # Update the diagonal of Lz
+        Lz_diag_indices = self.Lz_diag_indices.to(self.Lz_flat.device)
+        self.Lz_flat.data[Lz_diag_indices] += 0.5 * (torch.sqrt(self.Lz_flat.data[Lz_diag_indices]**2 + 4 * gamma) - self.Lz_flat.data[Lz_diag_indices])
+        
+        # Update the diagonal of Ly blocks
+        Ly_blocks_diag_indices = self.Ly_blocks_diag_indices.to(self.Ly_blocks_flat.device)
+        self.Ly_blocks_flat.data[Ly_blocks_diag_indices] += 0.5 * (torch.sqrt(self.Ly_blocks_flat.data[Ly_blocks_diag_indices]**2 + 4 * gamma) - self.Ly_blocks_flat.data[Ly_blocks_diag_indices])
