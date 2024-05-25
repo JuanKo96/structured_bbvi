@@ -18,9 +18,9 @@ for outer in $(seq 0 0); do
         
         CUDA_VISIBLE_DEVICES=1 python main.py --config $config_file --seed $seed --model_type "DiagonalVariational" &
         echo $! >> $pid_file
-        CUDA_VISIBLE_DEVICES=2 python main.py --config $config_file --seed $seed --model_type "FullRankVariational" &
+        CUDA_VISIBLE_DEVICES=3 python main.py --config $config_file --seed $seed --model_type "FullRankVariational" &
         echo $! >> $pid_file
-        CUDA_VISIBLE_DEVICES=3 python main.py --config $config_file --seed $seed --model_type "StructuredVariational" &
+        CUDA_VISIBLE_DEVICES=2 python main.py --config $config_file --seed $seed --model_type "StructuredVariational" &
         echo $! >> $pid_file
     done
     # Wait for the current batch of 4 processes to finish before starting the next batch

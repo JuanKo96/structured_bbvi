@@ -9,12 +9,16 @@ from models import DiagonalVariational, FullRankVariational, StructuredVariation
 from train import train
 from utils import set_seed, get_target_posterior
 from attrdict import AttrDict
+import torch.distributions as dist
 
 
 def parse_args_and_config():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", type=str, help="Path to the configuration file", default="config.yaml"
+        "--config",
+        type=str,
+        help="Path to the configuration file",
+        default="config.yaml",
     )
     args, remaining_args = parser.parse_known_args()
 
@@ -54,30 +58,38 @@ def main(config):
         raise ValueError("Invalid format for step_sizes")
 
     d_total = config.d_z + config.N * config.d_y
-    
-    seed_for_target = 10
-    jitter_for_target = 1e-5
-    scaled = 0.9
-    set_seed(seed_for_target)
-    # Set random mu and Sigma
-    mu = torch.randn(d_total, device=device).double()
-    Sigma = torch.eye(d_total, device=device).double() * 0.1
-    L_Sigma = torch.linalg.cholesky(Sigma)
-    
-    # mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target, scaled=scaled)
 
+    seed_for_target = 10
+    set_seed(seed_for_target)
+
+    # Set random mu and Sigma
+    mu_scalar = 5
+    sigma_scalar = 0.01
+    mu = torch.ones(d_total, device=device).double() * mu_scalar
+    Sigma = torch.eye(d_total, device=device).double() * sigma_scalar
+    L_Sigma = torch.linalg.cholesky(Sigma)
+
+    # mu, Sigma, L_Sigma = get_target_posterior(config, device, seed=seed_for_target, jitter=jitter_for_target, scaled=scaled)
     target_dist = torch.distributions.MultivariateNormal(mu, Sigma)
-    final_optimality_gap_list = []
+
+    # TODO: Implement dist.Independent since the current version calculate differnet log_prob() to MVN.
+    # std_dev = torch.diag(Sigma)
+    # normal_dist = dist.Normal(mu, std_dev)
+    # target_dist_indep = dist.Independent(normal_dist, 1)
+
     for step_size in step_sizes:
         try:
             seed = config.seed
             set_seed(seed)
-            
 
             if config.model_type == "DiagonalVariational":
-                q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(device)
+                q = DiagonalVariational(d_total, config.n_sample, config.jitter).to(
+                    device
+                )
             elif config.model_type == "FullRankVariational":
-                q = FullRankVariational(d_total, config.n_sample, config.jitter).to(device)
+                q = FullRankVariational(d_total, config.n_sample, config.jitter).to(
+                    device
+                )
             elif config.model_type == "StructuredVariational":
                 q = StructuredVariational(
                     config.d_z, config.d_y, config.N, config.n_sample, config.jitter
@@ -97,17 +109,31 @@ def main(config):
                 {"seed": seed, "step_size": step_size}, allow_val_change=True
             )
 
-            final_loss, final_optimality_gap_C, final_optimality_gap = train(q, optimizer, config, device, seed, step_size, target_dist, mu, L_Sigma)
+            final_loss, final_optimality_gap_C, final_optimality_gap = train(
+                q,
+                optimizer,
+                config,
+                seed,
+                step_size,
+                mu,
+                L_Sigma,
+                sigma_scalar,
+            )
 
-            wandb.log({"final_loss": final_loss,
-                    "final_optimality_gap_C":final_optimality_gap_C,
-                    "final_optimality_gap":final_optimality_gap})
+            wandb.log(
+                {
+                    "final_loss": final_loss,
+                    "final_optimality_gap_C": final_optimality_gap_C,
+                    "final_optimality_gap": final_optimality_gap,
+                }
+            )
             run.finish()
         except Exception as e:
             print(f"An error occurred for step size {step_size}: {e}")
             wandb.log({"error": str(e), "step_size": step_size})
-            if 'run' in locals():
+            if "run" in locals():
                 run.finish()
+
 
 if __name__ == "__main__":
     config = parse_args_and_config()
