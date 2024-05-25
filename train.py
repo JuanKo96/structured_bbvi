@@ -61,9 +61,12 @@ def train(
                 "model_type": config.model_type,
             }
         )
-        if optimality_gap.item() < 1:
+        if optimality_gap.item() < config.epsilon:
             if not hit_epsilon:
                 wandb.log({"T_epsilon": iteration})
                 hit_epsilon = True
-
+        if iteration == config.n_iterations -1:
+            if not hit_epsilon:
+                wandb.log({"T_epsilon": iteration})
+                hit_epsilon = True
     return loss.item(), optimality_gap_C.item(), optimality_gap.item()

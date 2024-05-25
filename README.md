@@ -1,19 +1,12 @@
 # Structured BBVI
 
-## Requirements
-
-- Python 3.6+
-- PyTorch
-- numpy
-- pyyaml
-- wandb
-- attrdict
-- tqdm
-
-Install the required packages using pip:
-```bash
-pip install torch numpy pyyaml wandb attrdict tqdm
+## Environment Setup
+Please first install your conda with yaml file.
 ```
+conda env create -f environment.yaml
+```
+
+
 ## Run experiments
 ```bash
 ./run_experiments.sh

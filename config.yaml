@@ -3,7 +3,7 @@ d_z: 5
 d_y: 3
 N: 1000
 n_sample: 10
-n_iterations: 20000
+n_iterations: 50000
 gamma: 0.000001
 lr: 0.001
 jitter: 0
@@ -16,6 +16,6 @@ step_sizes:
 #   - 0
 #   - 1
 #   - 2
-wandb_project: icml_bbvi_7
+wandb_project: bbvi_N1000
 wandb_mode: online  # 'online' or 'offline'
-forloop: 1
+epsilon: 10
