@@ -64,7 +64,7 @@ def main(config):
 
     # Set random mu and Sigma
     mu_scalar = 5
-    sigma_scalar = 0.01
+    sigma_scalar = 0.1
     mu = torch.ones(d_total, device=device).double() * mu_scalar
     Sigma = torch.eye(d_total, device=device).double() * sigma_scalar
     L_Sigma = torch.linalg.cholesky(Sigma)

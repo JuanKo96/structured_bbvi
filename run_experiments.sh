@@ -16,9 +16,9 @@ for outer in $(seq 0 0); do
     for inner in $(seq 0 2); do
         seed=$((outer * 3 + inner))
         
-        CUDA_VISIBLE_DEVICES=1 python main.py --config $config_file --seed $seed --model_type "DiagonalVariational" &
+        CUDA_VISIBLE_DEVICES=0 python main.py --config $config_file --seed $seed --model_type "DiagonalVariational" &
         echo $! >> $pid_file
-        CUDA_VISIBLE_DEVICES=0 python main.py --config $config_file --seed $seed --model_type "FullRankVariational" &
+        CUDA_VISIBLE_DEVICES=1 python main.py --config $config_file --seed $seed --model_type "FullRankVariational" &
         echo $! >> $pid_file
         CUDA_VISIBLE_DEVICES=2 python main.py --config $config_file --seed $seed --model_type "StructuredVariational" &
         echo $! >> $pid_file

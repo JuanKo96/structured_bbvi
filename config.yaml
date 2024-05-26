@@ -1,21 +1,21 @@
 seed: 0
 d_z: 5
 d_y: 3
-N: 1000
+N: 300
 n_sample: 10
-n_iterations: 50000
+n_iterations: 100000
 gamma: 0.000001
 lr: 0.001
 jitter: 0
 model_type: DiagonalVariational # DiagonalVariational, FullRankVariational, StructuredVariational
 step_sizes:
-  start: -6
-  stop: -1
+  start: -5
+  stop: -2
   num: 30
 # seeds:
 #   - 0
 #   - 1
 #   - 2
-wandb_project: bbvi_N1000
+wandb_project: bbvi_N300_eps_10
 wandb_mode: online  # 'online' or 'offline'
-epsilon: 10
+epsilon: 1
