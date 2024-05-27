@@ -18,7 +18,10 @@ class DiagonalVariational(nn.Module):
         std_normal = torch.randn(self.n_sample, len(self.m), device=L.device).double()
         z = self.m + std_normal @ L
         return z
-
+    
+    def proximal_update_step(self, gamma):
+        delta_L = 0.5 * (torch.sqrt(self.diag_L.data**2 + 4 * gamma) - self.diag_L.data)
+        self.diag_L.data += delta_L
 
 class FullRankVariational(nn.Module):
     def __init__(self, d, n_sample, jitter):
@@ -40,7 +43,11 @@ class FullRankVariational(nn.Module):
         z = self.m + std_normal @ L
         return z
 
-
+    def proximal_update_step(self, gamma):
+        L_diag = torch.diagonal(self.L)
+        delta_L = 0.5 * (torch.sqrt(L_diag.data**2 + 4 * gamma) - L_diag.data)
+        L_diag.data += delta_L
+        
 class StructuredVariational(nn.Module):
     def __init__(self, d_z, d_y, N, n_sample, jitter):
         super(StructuredVariational, self).__init__()

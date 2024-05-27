@@ -27,13 +27,13 @@ def train(
 
         with torch.no_grad():
             if config.model_type == "DiagonalVariational":
-                proximal_update(q.diag_L, config.gamma)
-
+                # proximal_update(q.diag_L, config.gamma)
+                q.proximal_update_step(config.gamma)
                 m = q.m
                 L_var = torch.diag(q.diag_L)
             elif config.model_type == "FullRankVariational":
-                proximal_update(torch.diagonal(q.L), config.gamma)
-
+                # proximal_update(torch.diagonal(q.L), config.gamma)
+                q.proximal_update_step(config.gamma)
                 m = q.m
                 L_var = torch.tril(q.L)
             elif config.model_type == "StructuredVariational":
